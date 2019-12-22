@@ -6,6 +6,7 @@ import asyncio
 import websockets
 from io import BytesIO
 import urllib
+import json
 
 with open('model_bike2.json', 'r') as json_file:
     loaded_model_json = json_file.read()
@@ -13,13 +14,16 @@ loaded_model = model_from_json(loaded_model_json)
 loaded_model.load_weights("model_bike2.h5")
 loaded_model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
+with open('config.json', 'r') as json_file:
+    config = json.loads(json_file.read())
+
 def downloadImage(URL):
     with urllib.request.urlopen(URL) as url:
         img = image.load_img(BytesIO(url.read()), target_size=(150, 150))
     return image.img_to_array(img)
 
 async def hello():
-    uri = "ws://localhost:8080"
+    uri = config['uri']
     async with websockets.connect(uri) as websocket:
         while True:
             await websocket.send("get")
