@@ -8,10 +8,10 @@ from io import BytesIO
 import urllib
 import json
 
-with open('model_bike2.json', 'r') as json_file:
+with open('model_bike3.json', 'r') as json_file:
     loaded_model_json = json_file.read()
 loaded_model = model_from_json(loaded_model_json)
-loaded_model.load_weights("model_bike2.h5")
+loaded_model.load_weights("model_bike3.h5")
 loaded_model.compile(optimizer='rmsprop', loss='categorical_crossentropy', metrics=['accuracy'])
 
 with open('config.json', 'r') as json_file:
@@ -22,6 +22,12 @@ def downloadImage(URL):
         img = image.load_img(BytesIO(url.read()), target_size=(150, 150))
     return image.img_to_array(img)
 
+def predict(url):
+    img_array = downloadImage(url)
+    result = loaded_model.predict(np.array([img_array]))
+    print(url, result)
+    return '1' if result[0] > 0.5 else '0'
+
 async def hello():
     uri = config['uri']
     async with websockets.connect(uri) as websocket:
@@ -31,11 +37,7 @@ async def hello():
                 request = await websocket.recv()
                 if request == "end":
                     break
-                img_array = downloadImage(request)
-                result = loaded_model.predict(np.array([img_array]))
-                print(request, result)
-                await websocket.send(str(np.argmax(result[0])))
+                await websocket.send(predict(request))
 
 asyncio.get_event_loop().run_until_complete(hello())
-
 
